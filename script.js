@@ -95,7 +95,7 @@ class Todolist {
 
     addTodo(text) {
         const newTodo = new Todo(this.nextId++, text);
-        this.todos.unshift(newTodo);
+        this.todos.push(newTodo);
         this.#renderNewTodo(newTodo);
         this.saveTodosToLocalStorage();
         this.saveNextIdToLocalStorage();
