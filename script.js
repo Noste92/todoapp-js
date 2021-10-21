@@ -1,149 +1,27 @@
-class Todo {
-    constructor(id, text, completed = false) {
-        this.id = id;
-        this.text = text;
-        this.completed = completed;
-    }
+import { Todolist } from './model/todolist.js';
 
-    getId() {
-        return this.id;
-    }
-
-    getText() {
-        return this.text;
-    }
-
-    isCompleted() {
-        return this.completed;
-    }
-}
-
-class Todolist {
-    constructor() {
-        this.todos = this.loadTodosFromLocalStorage();
-        this.nextId = this.loadNextIdFromCache();
-        this.todoDOMList = document.querySelector('ul#todolist');
-        this.#renderTodos(this.getTodos());
-    }
-
-    loadNextIdFromCache() {
-        const nextId = localStorage.getItem('nextId');
-        return (nextId) ? +nextId : 1;
-    }
-
-    loadTodosFromLocalStorage() {
-        const localTodos = localStorage.getItem('todos');
-        if (localTodos) {
-            const todos = JSON.parse(localTodos);
-            return (todos) ? todos : [];
-        }
-        return [];
-    }
-
-    saveTodosToLocalStorage() {
-        localStorage.setItem('todos', JSON.stringify(this.todos));
-    }
-
-    saveNextIdToLocalStorage() {
-        localStorage.setItem('nextId', this.nextId);
-    }
-
-    renderTodosByType(type) {
-        const todos = this.getTodos().filter(todo => {
-            let res = true;
-            if (type !== 'all') {
-                res = (type === 'completed') ? todo.completed : !todo.completed;
-            }
-            return res;
-        })
-        this.#renderTodos(todos);
-    }
-
-    #renderTodos(todos) {
-        this.todoDOMList.innerHTML = '';
-        todos.map(todo => this.#createTodoDOMElement(todo))
-            .forEach(element => this.todoDOMList.appendChild(element));
-    }
-
-    #createTodoDOMElement({ id, text, completed }) {
-        const element = document.createElement('li');
-        element.classList.add(completed ? 'completed' : 'uncompleted');
-        element.id = this.#formatId(id);
-        const check = document.createElement('span');
-        check.classList.add(completed ? 'completed' : 'uncompleted');
-        check.addEventListener('click', e => this.#toggleTodo(id, e.target));
-
-        const cross = document.createElement('span');
-        cross.classList.add('cross');
-        cross.addEventListener('click', e => this.#removeTodo(id));
-
-        const textNode = document.createTextNode(text);
-
-        element.appendChild(check);
-        element.appendChild(textNode);
-        element.appendChild(cross);
-        return element;
-    }
-
-    #formatId(id) {
-        return 'todo-' + id;
-    }
-
-    getTodos() {
-        return this.todos;
-    }
-
-    addTodo(text) {
-        const newTodo = new Todo(this.nextId++, text);
-        this.todos.push(newTodo);
-        this.#renderNewTodo(newTodo);
-        this.saveTodosToLocalStorage();
-        this.saveNextIdToLocalStorage();
-    }
-
-    #renderNewTodo({ id, text, completed }) {
-        this.todoDOMList
-            .appendChild(this.#createTodoDOMElement({ id, text, completed }));
-    }
-
-    #removeTodo(id) {
-        this.todos = this.todos.filter(todo => todo.id !== id);
-        this.todoDOMList.removeChild(this.todoDOMList.querySelector('#' + this.#formatId(id)));
-        this.saveTodosToLocalStorage();
-    }
-
-    #toggleTodo(id, domElement) {
-        this.todos = this.todos.map(todo => {
-            todo.completed = (todo.id === id) ? !todo.completed : todo.completed;
-            return todo;
-        });
-        domElement.classList.toggle('completed');
-        domElement.classList.toggle('uncompleted');
-        domElement.parentNode.classList.toggle('completed');
-        this.saveTodosToLocalStorage();
-    }
-}
-
-
-const myTodo = new Todolist();
-
-const input = document.querySelector('input#todo');
 const ENTER_KEY = 13;
-input.addEventListener('keyup', event => {
-    if (event.keyCode === ENTER_KEY && event.target.value.length > 2) {
-        myTodo.addTodo(event.target.value);
-        event.target.value = '';
-    }
-});
 
-const buttons = document.querySelector('div.buttons');
-buttons.addEventListener('click', event => {
-    document.querySelectorAll('button').forEach(button => {
-        button.classList.remove('active');
-        button.removeAttribute('disabled');
+const todolist = new Todolist();
+
+document.querySelector('input#todo')
+    .addEventListener('keyup', event => {
+        if (event.keyCode === ENTER_KEY && event.target.value.length > 2) {
+            todolist.addTodo(event.target.value);
+            event.target.value = '';
+        }
     });
-    const button = event.target;
-    button.classList.toggle('active');
-    button.setAttribute('disabled', true);
-    myTodo.renderTodosByType(button.getAttribute('filter'));
-});
+
+document.querySelector('div.buttons')
+    .addEventListener('click', event => {
+        const button = event.target;
+        if ("BUTTON" === button.tagName) {
+            document.querySelectorAll('button').forEach(button => {
+                button.classList.remove('active');
+                button.removeAttribute('disabled');
+            });
+            button.classList.toggle('active');
+            button.setAttribute('disabled', true);
+            todolist.renderer.renderTodosByType(button.getAttribute('filter'));
+        }
+    });
