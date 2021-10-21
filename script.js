@@ -20,10 +20,32 @@ class Todo {
 
 class Todolist {
     constructor() {
-        this.todos = [];
-        this.nextId = 1;
+        this.todos = this.loadTodosFromLocalStorage();
+        this.nextId = this.loadNextIdFromCache();
         this.todoDOMList = document.querySelector('ul#todolist');
         this.#renderTodos(this.getTodos());
+    }
+
+    loadNextIdFromCache() {
+        const nextId = localStorage.getItem('nextId');
+        return (nextId) ? +nextId : 1;
+    }
+
+    loadTodosFromLocalStorage() {
+        const localTodos = localStorage.getItem('todos');
+        if (localTodos) {
+            const todos = JSON.parse(localTodos);
+            return (todos) ? todos : [];
+        }
+        return [];
+    }
+
+    saveTodosToLocalStorage() {
+        localStorage.setItem('todos', JSON.stringify(this.todos));
+    }
+
+    saveNextIdToLocalStorage() {
+        localStorage.setItem('nextId', this.nextId);
     }
 
     renderTodosByType(type) {
@@ -73,8 +95,10 @@ class Todolist {
 
     addTodo(text) {
         const newTodo = new Todo(this.nextId++, text);
-        this.todos.push(newTodo);
+        this.todos.unshift(newTodo);
         this.#renderNewTodo(newTodo);
+        this.saveTodosToLocalStorage();
+        this.saveNextIdToLocalStorage();
     }
 
     #renderNewTodo({ id, text, completed }) {
@@ -85,6 +109,7 @@ class Todolist {
     #removeTodo(id) {
         this.todos = this.todos.filter(todo => todo.id !== id);
         this.todoDOMList.removeChild(this.todoDOMList.querySelector('#' + this.#formatId(id)));
+        this.saveTodosToLocalStorage();
     }
 
     #toggleTodo(id, domElement) {
@@ -95,6 +120,7 @@ class Todolist {
         domElement.classList.toggle('completed');
         domElement.classList.toggle('uncompleted');
         domElement.parentNode.classList.toggle('completed');
+        this.saveTodosToLocalStorage();
     }
 }
 
